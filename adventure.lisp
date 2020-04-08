@@ -12,7 +12,7 @@
   name
   description)
 
-(defstruct room
+(defstruct area
   short-description
   long-description
   items
