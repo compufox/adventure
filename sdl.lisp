@@ -23,7 +23,10 @@ FORMS are of the form (:scancode-KEY SEXP).
        (with-renderer (renderer window)
 	 (set-render-draw-color renderer 0 0 0 1)
 	 (start-text-input)
-	 (let ((current-line ""))
+	 (let ((current-line "")
+	       (font (sdl2-ttf:open-font (merge-pathnames "fonts/Minimal5x5Monospaced.ttf"
+							  (asdf:system-source-directory :adventure))
+					 16)))
 	   (with-event-loop (:method :poll)
 	     (:textinput (:text text)
 			 (setf current-line
@@ -33,6 +36,9 @@ FORMS are of the form (:scancode-KEY SEXP).
 		     (scancode-case sym
 		       (:scancode-escape (push-quit-event))
 		       ;; this is where we need to start firing off events like "on-enter"
+		       (:scancode-backspace
+			(setf current-line (subseq current-line 0
+						   (1- (length current-line)))))
 		       (:scancode-return
 			(progn
 			  (princ current-line)
