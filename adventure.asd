@@ -6,7 +6,7 @@
   :license  "GPLv3"
   :version "0.0.1"
   :serial t
-  :depends-on (#:sdl2 #:sdl2-ttf #:str)
+  :depends-on (#:sdl2 #:sdl2-ttf #:str #:cl-ppcre)
   :components ((:file "package")
 	       (:file "sdl")
                (:file "adventure")))

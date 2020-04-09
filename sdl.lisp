@@ -1,5 +1,7 @@
 (in-package :adventure)
 
+(defvar *ticks-per-frame* (/ 1000 60))
+
 (defmacro scancode-case (symbol &rest forms)
   "allows scancodes to be checked in a format similar to CASE
 
@@ -20,15 +22,17 @@ FORMS are of the form (:scancode-KEY SEXP).
      (sdl2-ttf:init)
      (with-window (window :title ,name :w ,width :h ,height
 			  :flags '(:shown))
-       (with-renderer (renderer window)
-	 (set-render-draw-color renderer 0 0 0 1)
+       (with-renderer (renderer window :flags '(:presentvsync :accelerated))
 	 (start-text-input)
-	 (let ((current-line "")
-	       (font (sdl2-ttf:open-font (merge-pathnames "fonts/Minimal5x5Monospaced.ttf"
+	 (let ((current-line "> ")
+	       (window-surface (get-window-surface window))
+	       (font (sdl2-ttf:open-font (merge-pathnames "fonts/Minimal5x7.ttf"
 							  (asdf:system-source-directory :adventure))
-					 16)))
+					 25))
+	       (updated t))
 	   (with-event-loop (:method :poll)
 	     (:textinput (:text text)
+			 (setf updated t)
 			 (setf current-line
 			       (concatenate 'string current-line
 					    (string (code-char text)))))
@@ -43,12 +47,28 @@ FORMS are of the form (:scancode-KEY SEXP).
 			(progn
 			  (princ current-line)
 			  (princ #\newline)
-			  (setf current-line "")
+			  (setf current-line "> ")
 			  (force-output)))))
 	     (:idle ()
 		    ;; this is where we would need to redraw our backlog buffer
 		    ;; some kind of loop
+		    (set-render-draw-color renderer 0 0 0 255)
 		    (render-clear renderer)
+		    (unless (str:emptyp current-line)
+		      (let* ((surf (sdl2-ttf:render-utf8-solid font current-line 255 255 255 255))
+			     (text (create-texture-from-surface renderer surf))
+			     (rect (make-rect 0
+					      ;; ensures that we print the text
+					      ;; right at the bottom of the window
+					      (- (surface-height window-surface)
+						 (texture-height text))
+					      (texture-width text)
+					      (texture-height text))))
+			(render-copy renderer text
+				     :source-rect (cffi:null-pointer)
+				     :dest-rect rect)
+			(destroy-texture text)))
 		    (render-present renderer))
-	     (:quit () t))))
-       (sdl2-ttf:quit))))
+	     (:quit ()
+		    (sdl2-ttf:quit)
+		    t)))))))
