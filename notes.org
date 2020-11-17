@@ -1,0 +1,123 @@
+* Adventure 
+
+** Goals
+   - Provide easy way to create text based game
+
+** Ideas
+
+*** ditch SDL, stick with command line only
+
+**** Pros    
+     - less dependencies
+     - basically no "display" code (handled by console)
+**** Cons
+     - no pretty fonts
+     - no graphics/audio
+
+*** pre-built executable "engine"
+    - parses INI files for game data
+    - builds world out of plain text
+
+**** Pros      
+     - LOW barrier to entry
+     - no coding!
+     - easy distribution
+
+**** Cons
+     - engine wouldn't be too flexible (support for custom lisp code could fix this?)
+     - lot of hard coded logic and translating data back and forth
+
+
+** INI File Specs
+
+   field ending with =?= is optional
+   values ending with =+= indicate multiple values can be added
+
+*** meta.ini
+#+BEGIN_SRC
+title = String: game window title
+#+END_SRC
+
+*** items.ini
+#+BEGIN_SRC
+[ItemCode]
+name = String: what is displayed to the player normally (i.e., when they go through their inventory or enter a room and see it on the floor)
+desc = String: what is displayed when a player "examine"s the item
+triggers? = EventCodeKeyword+
+usable-on? = ItemCodeKeyword+
+usable-in? = RoomCodeKeyword+
+#+END_SRC
+
+**** EventCodeKeyword
+     an event code keyword is an event's code as specified in its =[declaration]= expressed as a keyword.
+
+     ex: an event's code is =[UnlockNorthDoor]=, the EventCodeKeyword would be =:UnlockNorthDoor=
+
+**** ItemCodeKeyword
+     an item code keyword is an item's code as specified in its =[declaration]= expressed as a keyword.
+
+     ex: an item's code is =[Axe]=, the ItemCodeKeyword would =:Axe=
+
+**** RoomCodeKeyword
+     a room code keyword is a room's code as specified in its =[declaration]= expressed as a keyword
+
+     ex: a room's code is =[4x5]=, the RoomCodeKeyword would be =:4x5=
+
+*** rooms.ini
+#+BEGIN_SRC
+width = Int
+length = Int
+
+[XxY]
+desc = String: room description; what is printed when first entering 
+desc-extended = String: room description, but longer. what is printed when using the "look" command
+items = ItemCodeKeyword+
+exits = DirectionKeyword+
+locked = DirectionKeyword+
+#+END_SRC
+
+**** DirectionKeyword
+     A DirectionKeyword is any of the following: 
+
+     :w
+     :n
+     :s
+     :e
+
+*** events.ini
+#+BEGIN_SRC
+[EventCode]
+desc = String
+action = EventKeyword: see below
+affects-room? = RoomCodeKeyword
+affects-item? = ItemCodeKeyword
+data? = String-or-DirectionKeyword: depending on the event action this can be a string or a keyword. see below for more information
+#+END_SRC
+
+**** EventKeyword
+     An EventKeyword is any of the following:
+     
+     :unlock
+     :lock
+     :remove-item
+     :add-item
+     :change-desc
+     :game-over
+
+***** Unlock/Lock
+      an unlock/lock event keyword requires the =affects-room= and =data= fields.
+
+      it will lock or unlock the room specified by =affects-room=, and will check =data= for a DirectionKeyword
+
+***** Remove/Add Item
+      a remove or add event keyword requires the =affects-item= field.
+
+      it will add/remove the specified item to/from the player's inventory
+
+***** Change Desc(ription)
+      a change description even keyword requires the =affects-item= or =affects-room= and =data= fields
+
+      it will change the description of whatever room or item is specified, looking in =data= for the new description.
+
+***** Game Over
+      indicates that the game is over. 
